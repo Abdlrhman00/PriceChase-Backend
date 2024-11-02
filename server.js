@@ -11,7 +11,7 @@ const dotenv = require('dotenv');
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
-const mongoURI = proccess.env.MONGODB_URI
+const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/priceChase';
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -26,17 +26,19 @@ mongoose.connect(mongoURI, {
     .catch((error) => console.error("MongoDB connection error:", error));
 
 // Import Routes
-const authRoutes = require('./routes/authRoutes');
-const productRoutes = require('./routes/productRoutes');
+// const authRoutes = require('./routes/authRoutes');
+// const productRoutes = require('./routes/productRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
-const wishlistRoutes = require('./routes/wishlistRoutes');
+// const wishlistRoutes = require('./routes/wishlistRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const subCategoryRoutes = require('./routes/subCategoryRoutes')
 
 // API Routes
-app.use('/auth', authRoutes);          // User authentication and profile management
-app.use('/products', productRoutes);    // Product management
+// app.use('/auth', authRoutes);          // User authentication and profile management
+// app.use('/products', productRoutes);    // Product management
 app.use('/categories', categoryRoutes); // Category and Subcategory management
-app.use('/wishlist', wishlistRoutes);   // User wishlist handling
+app.use('/subcategories', subCategoryRoutes);
+// app.use('/wishlist', wishlistRoutes);   // User wishlist handling
 app.use('/admin', adminRoutes);         // Admin-only endpoints (user management, product deletion, etc.)
 
 // Error Handling Middleware
