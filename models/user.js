@@ -1,18 +1,23 @@
 const mongoose = require('mongoose');
 
 const wishlistSchema = new mongoose.Schema({
-    ProductID: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
-    AddedDate: { type: Date, required: true }
+    productID: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+    addedDate: { type: Date, default: Date.now }
 });
 
 const userSchema = new mongoose.Schema({
-    FirstName: { type: String, required: true },
-    LastName: { type: String, required: true },
-    Email: { type: String, required: true, unique: true },
-    Password: { type: String, required: true },
-    ProfilePhoto: { type: String, required: true },
-    Wishlist: [wishlistSchema]
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
+    email: { type: String, required: true, unique: true, lowercase: true },
+    password: { type: String, required: true },
+    profilePhoto: { type: String },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    }, 
+    wishlist: [wishlistSchema]
 });
-
+ 
 const User = mongoose.model('User', userSchema, 'User');
 module.exports = User;
