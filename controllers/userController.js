@@ -3,18 +3,18 @@ const AppError = require("../utils/AppError");
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const path = require("path");
-const fs = require('fs');
+const fs = require("fs");
+const generateJWT = require("../utils/generateJWT");
+const setCookie = require("../utils/setCookie");
 
-//asyncHandler(
 exports.Signup = asyncHandler(async (req, res, next) => {
   const { email, password, firstName, lastName } = req.body;
   const oldUser = await User.findOne({ email });
 
   if (oldUser) {
-
     // Delete the uploaded photo if it exists
     if (req.file) {
-      const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
+      const filePath = path.join(__dirname, "..", "uploads", req.file.filename);
       fs.unlink(filePath, (err) => {
         if (err) console.error("Error deleting file:", err.message);
       });
@@ -30,7 +30,6 @@ exports.Signup = asyncHandler(async (req, res, next) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   // If the user uploads a photo take it otherwise take the default one
-  console.log(req.file);
   const profilePhoto = req.file
     ? req.file.filename
     : "uploads/profile_photo.jpg";
@@ -43,6 +42,23 @@ exports.Signup = asyncHandler(async (req, res, next) => {
     profilePhoto,
   });
 
+  const accessToken = await generateJWT(
+    { email, id: newuser.id, role: newuser.role },
+    "5m"
+  );
+  setCookie(res, "access_token", accessToken, 5 * 60 * 1000);
+  const refreshToken = await generateJWT(
+    { email, id: newuser.id, role: newuser.role },
+    "7d"
+  );
+  setCookie(res, "refresh_token", refreshToken, 7 * 24 * 60 * 60 * 1000);
+  const hashedToken = await bcrypt.hash(refreshToken, 10);
+
+  newuser.refreshTokens.push({
+    token: hashedToken,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 d from now
+  });
+
   await newuser.save();
 
   return res.status(201).json({
@@ -51,40 +67,76 @@ exports.Signup = asyncHandler(async (req, res, next) => {
       firstName,
       lastName,
       email,
-      password: hashedPassword,
       profilePhoto,
     },
   });
 });
 
-exports.Login = async (req, res) => {
+exports.Login = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
+
+  if (!email || !password)
+    return next(new AppError("Email and password are required", 400));
+
   const user = await User.findOne({ email });
 
-  if (!user) return res.status(404).json({ error: "User not fount" });
+  if (!user) return next(new AppError("User not found", 404));
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const isValid = await bcrypt.compare(password, user.password);
 
-  if (hashedPassword !== user.password)
-    return res.status(401).json({ error: "Invalid email or password" });
+  if (!isValid) return next(new AppError("Invalid email or password", 401));
 
-  return res.status(200).json({ message: "User successfully registered" });
-};
+  const accessToken = await generateJWT(
+    { email, id: user.id, role: user.role },
+    "5m"
+  );
+  setCookie(res, "access_token", accessToken, 5 * 60 * 1000);
 
-exports.GetAccountData = async (req, res) => {
-  const user = await User.findOne({ email: req.body.email });
+  const refreshToken = await generateJWT(
+    { email, id: user.id, role: user.role },
+    "7d"
+  );
+  setCookie(res, "refresh_token", refreshToken, 7 * 24 * 60 * 60 * 1000);
+  const hashedToken = await bcrypt.hash(refreshToken, 10);
 
-  if (!user) return res.status(404).json({ error: "User not found" });
+  user.refreshTokens.push({
+    token: hashedToken,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 d from now
+  });
+
+  await user.save();
 
   return res.status(200).json({
-    message: "User is found",
+    message: "User successfully logged In",
+    data: {
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        profilePhoto: user.profilePhoto,
+      },
+    },
+  });
+});
+
+exports.GetAccountData = asyncHandler(async (req, res, next) => {
+  const userId = req.user.id;
+
+  const user = await User.findById(userId).select(
+    "firstName lastName email profilePhoto"
+  );
+
+  if (!user) return next(new AppError("User not found", 404));
+
+  return res.status(200).json({
     data: {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      profilePhoto: user.profilePhoto,
     },
   });
-};
+});
 
 /*
 
@@ -108,4 +160,3 @@ exports.DeleteAccount = async (req,res) => {
 }
 
 */
- 

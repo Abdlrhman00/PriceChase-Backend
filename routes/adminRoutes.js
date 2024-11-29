@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { isAdmin } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/authorizeRoles');
 // const { 
 //     createProduct, updateProduct, deleteProduct,
 //     createCategory, updateCategory, deleteCategory,
