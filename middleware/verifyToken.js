@@ -4,7 +4,7 @@ const setCookie = require("../utils/setCookie");
 const AppError = require("../utils/AppError");
 const generateJWT = require("../utils/generateJWT");
 const validateRefreshToken = require("../utils/validateRefreshToken");
-const sendUnauthorizedError = require("../utils/sendUnauthorizedError");
+const sendError = require("../utils/sendError");
 
 const verifyToken = async (req, res, next) => {
   const access_token = req.cookies.access_token;
@@ -13,7 +13,7 @@ const verifyToken = async (req, res, next) => {
 
   if (!access_token) {
     // If no access token
-    if (!refresh_token) return sendUnauthorizedError(next);
+    if (!refresh_token) return next(sendError(401));
 
     try {
       const decodedRefreshToken = jwt.verify(
@@ -23,11 +23,11 @@ const verifyToken = async (req, res, next) => {
 
       const user = await User.findById(decodedRefreshToken.id);
 
-      if (!user) return sendUnauthorizedError(next);
+      if (!user) return next(sendError(401));
 
       const isValid = await validateRefreshToken(refresh_token, user);
 
-      if (!isValid) return sendUnauthorizedError(next);
+      if (!isValid) return next(sendError(401));
 
       // Generate new access token
       const accessToken = await generateJWT(
@@ -44,7 +44,7 @@ const verifyToken = async (req, res, next) => {
 
       setCookie(res, "access_token", accessToken, 5 * 60 * 1000);
     } catch (err) {
-      return sendUnauthorizedError(next);
+      return next(sendError(401));
     }
   } else {
     try {
@@ -55,7 +55,7 @@ const verifyToken = async (req, res, next) => {
 
       req.user = decodedAccessToken;
     } catch (err) {
-      return sendUnauthorizedError(next);
+      return next(sendError(401));
     }
   }
   next();

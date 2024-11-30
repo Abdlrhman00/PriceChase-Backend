@@ -4,7 +4,7 @@ const router = express.Router();
 const multer = require("multer");
 const AppError = require("../utils/AppError");
 const verifyToken = require("../middleware/verifyToken");
-const authorizeRoles = require("../middleware/authorizeRoles");
+const asyncHandler = require("express-async-handler");
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -26,19 +26,30 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
-router.post("/signup", upload.single("profilePhoto"), userController.Signup);
+router.post(
+  "/signup",
+  upload.single("profilePhoto"),
+  asyncHandler(userController.Signup)
+);
 
-router.post('/login',userController.Login)
+router.post("/login", asyncHandler(userController.Login));
 
-router.route('/account')
-.get(verifyToken,userController.GetAccountData);
-// .patch(UpdateAccount)
-// .delete(DeleteAccount)
+router.use("/account", verifyToken);
 
-/*
+router
+  .route("/account")
+  .get(asyncHandler(userController.GetAccountData))
+  .patch(
+    upload.single("profilePhoto"),
+    asyncHandler(userController.UpdateAccount)
+  )
+  .delete(asyncHandler(userController.DeleteAccount));
 
-router.psot('/logout',Logout)
+router.patch(
+  "/account/update-password",
+  asyncHandler(userController.ChangePassword)
+);
 
+router.post("/logout", verifyToken, asyncHandler(userController.Logout));
 
-*/
 module.exports = router;
