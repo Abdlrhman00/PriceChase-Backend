@@ -8,7 +8,7 @@ const { authorizeRoles } = require('../middleware/authorizeRoles');
 //     getAllUsers, deleteUser
 // } = require('../controllers/adminController');
 
-const { 
+const {
     updateProduct, deleteProduct, getAllProducts,
     getAllUsers, deleteUser
 } = require('../controllers/adminController');
