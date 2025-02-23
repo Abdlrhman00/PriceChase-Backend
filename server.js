@@ -29,7 +29,7 @@ mongoose.connect(mongoURI, {
 // const authRoutes = require('./routes/authRoutes');
 // const productRoutes = require('./routes/productRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
-// const wishlistRoutes = require('./routes/wishlistRoutes');
+const wishlistRoutes = require('./routes/wishlistRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const subCategoryRoutes = require('./routes/subCategoryRoutes')
 
@@ -38,7 +38,7 @@ const subCategoryRoutes = require('./routes/subCategoryRoutes')
 // app.use('/products', productRoutes);    // Product management
 app.use('/categories', categoryRoutes); // Category and Subcategory management
 app.use('/subcategories', subCategoryRoutes);
-// app.use('/wishlist', wishlistRoutes);   // User wishlist handling
+app.use('/wishlist', wishlistRoutes);   // User wishlist handling
 app.use('/admin', adminRoutes);         // Admin-only endpoints (user management, product deletion, etc.)
 
 // Error Handling Middleware
