@@ -1,5 +1,0 @@
-MONGODB_URI="mongodb+srv://moh18kh:24FZFdfV5uHy0nPu@cluster0.tydpggw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-PORT=5000
-JWT_SECRET_KEY=f9ff9107ab56f6116c333550d3886c723f0ac012b3226c06f16319ff8085799c
-EMAIL='moh18.kh@gmail.com'
-EMAIL_PASSWORD='ergdecktsaiahbip'

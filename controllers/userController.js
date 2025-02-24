@@ -17,10 +17,11 @@ exports.Signup = async (req, res, next) => {
       const filePath = path.join(__dirname, "..", "uploads", req.file.filename);
       deleteProfilePhoto(filePath);
     }
-
+  
     return next(sendError(409, "userExists"));
   }
 
+  console.log(email, password, firstName, lastName)
   if (!email || !password || !firstName || !lastName)
     return next(sendError(400, "missingFields"));
 
