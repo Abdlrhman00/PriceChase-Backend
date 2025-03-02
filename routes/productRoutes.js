@@ -1,12 +1,15 @@
-const express = require('express');
+const express = require("express");
+const productController = require("../controllers/productController");
 const router = express.Router();
-//const { authorizeRoles } = require('../middleware/authorizeRoles');
+const asyncHandler = require("express-async-handler");
 
 const {
     incrementViewCount,
     getPopularProducts, getDiscountedProducts
 } = require('../controllers/productController');
 
+router.get("/", asyncHandler(productController.getAllProducts));
+router.get("/:id", asyncHandler(productController.getProductById));
 router.put("/:productId/view", incrementViewCount);
 router.get("/popular", getPopularProducts);
 router.get("/discounts", getDiscountedProducts);
