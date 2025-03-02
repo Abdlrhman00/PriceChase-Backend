@@ -10,6 +10,8 @@ const path = require("path");
 const cookieParser = require('cookie-parser');
 const AppError = require("./utils/AppError");
 const globalError = require("./middleware/errorMiddleware");
+const fs = require("fs");
+const Product = require("./models/product"); 
 // Configuration
 dotenv.config();
 const app = express();
@@ -29,8 +31,25 @@ app.use('/uploads',express.static(path.join(__dirname,'uploads')));
 mongoose
   .connect(mongoURI, {
   })
-  .then(() => console.log("Connected to MongoDB"))
+  .then(() => {console.log("Connected to MongoDB")/*,insertProducts()*/})
   .catch((error) => console.error("MongoDB connection error:", error));
+
+
+/*  const insertProducts = async () => {
+    try {
+      // Read JSON file
+      const data = fs.readFileSync("product_info.json", "utf-8");
+      const products = JSON.parse(data);
+  
+      // Insert products into the database
+      await Product.insertMany(products);
+      console.log("Products inserted successfully!");
+    } catch (error) {
+      console.error("Error inserting products:", error);
+    } finally {
+      mongoose.connection.close();
+    }
+  }; */
 
 // Import Routes
 //const authRoutes = require('./routes/authRoutes');
@@ -40,6 +59,8 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 
 const userRoutes = require("./routes/userRoutes");
+const productRoutes = require("./routes/productRoutes");
+
 const { error } = require("console");
 // API Routes
 //app.use('/auth', authRoutes);          // User authentication and profile management
@@ -49,6 +70,7 @@ app.use("/categories", categoryRoutes); // Category and Subcategory management
 app.use("/admin", adminRoutes); // Admin-only endpoints (user management, product deletion, etc.)
 
 app.use("/user", userRoutes);
+app.use("/products", productRoutes);
 
 
 // Handle any invalid route
