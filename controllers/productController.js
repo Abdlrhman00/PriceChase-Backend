@@ -11,7 +11,7 @@ exports.getPopularProducts = async (req, res) => {
             res.status(200).json({message: 'Popular products fetched succefully', products});
         }
         else{
-            res.status(200).json({message: 'No Popular products found', products});
+            res.status(404).json({message: 'No Popular products found', products});
         }
     } catch (err) {
         res.status(500).json({ message: "Error fetching popular products" });
@@ -37,7 +37,7 @@ exports.getDiscountedProducts = async (req, res) => {
             res.status(200).json({message: 'Discounted products fetched succefully', products});
         }
         else{
-            res.status(200).json({message: 'No discounted products found', products});
+            res.status(404).json({message: 'No discounted products found', products});
         }
     } catch (err) {
         res.status(500).json({ message: "Error fetching discounted products" });

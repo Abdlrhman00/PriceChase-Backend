@@ -63,7 +63,6 @@ const wishlistRoutes = require('./routes/wishlistRoutes');
 const adminRoutes = require("./routes/adminRoutes");
 const subCategoryRoutes = require('./routes/subCategoryRoutes')
 const userRoutes = require("./routes/userRoutes");
-const productRoutes = require("./routes/productRoutes");
 
 // API Routes
 //app.use('/auth', authRoutes);          // User authentication and profile management
@@ -73,7 +72,6 @@ app.use('/subcategories', subCategoryRoutes);
 app.use('/wishlist', wishlistRoutes);   // User wishlist handling
 app.use("/admin", adminRoutes); // Admin-only endpoints (user management, product deletion, etc.)
 app.use("/user", userRoutes);
-app.use("/products", productRoutes);
 
 
 // Handle any invalid route

@@ -9,9 +9,9 @@ const {
 } = require('../controllers/productController');
 
 router.get("/", asyncHandler(productController.getAllProducts));
-router.get("/:id", asyncHandler(productController.getProductById));
-router.put("/:productId/view", incrementViewCount);
 router.get("/popular", getPopularProducts);
 router.get("/discounts", getDiscountedProducts);
+router.get("/:id", asyncHandler(productController.getProductById));
+router.put("/:productId/view", incrementViewCount);
 
 module.exports = router;
