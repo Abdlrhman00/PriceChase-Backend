@@ -30,7 +30,7 @@ app.use('/uploads',express.static(path.join(__dirname,'uploads')));
 
 // Database Connection
 mongoose
-  .connect(mongoURI, {
+  .connect(mongoURI || 'mongodb://localhost:27017/priceChase', {
   })
   .then(() => console.log("Connected to MongoDB"))
   .catch((error) => console.error("MongoDB connection error:", error));

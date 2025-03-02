@@ -17,7 +17,9 @@ const productSchema = new mongoose.Schema({
     SubCategoryID: { type: mongoose.Schema.Types.ObjectId, ref: 'SubCategory', required: true },
     CategoryID: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
     StoreID: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true },
-    TopReviews: [reviewSchema]
+    TopReviews: [reviewSchema],
+    //Attributes for popular products
+    Views: { type: Number, default: 0 }, // Track views
 });
 
 const Product = mongoose.models.Product || mongoose.model('Product', productSchema, 'Product');
