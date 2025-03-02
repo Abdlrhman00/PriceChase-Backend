@@ -5,7 +5,12 @@ const { updatePopularProducts } = require("../utils/productService");
 exports.getPopularProducts = async (req, res) => {
     try {
         const products = await Product.find({ isPopular: true });
-        res.status(200).json({message: 'Popular Products fetched succefully', products});
+        if(products.length > 0){
+            res.status(200).json({message: 'Popular products fetched succefully', products});
+        }
+        else{
+            res.status(200).json({message: 'No Popular products found', products});
+        }
     } catch (err) {
         res.status(500).json({ message: "Error fetching popular products" });
     }
@@ -16,18 +21,22 @@ exports.incrementViewCount = async (req, res) => {
     const { productId } = req.params;
     try {
         await Product.findByIdAndUpdate(productId, { $inc: { Views: 1 } });
-        res.json({ message: "View count updated" });
+        res.status(200).json({ message: "View count updated" });
     } catch (err) {
         res.status(500).json({ message: "Error updating view count" });
     }
 };
 
-
 // Get Discounted Products (Price Dropped)
 exports.getDiscountedProducts = async (req, res) => {
     try {
-        const products = await Product.find({ hasDiscount: true });
-        res.json(products);
+        const products = await Product.find({ priceDrop: true });
+        if(products.length > 0){
+            res.status(200).json({message: 'Discounted products fetched succefully', products});
+        }
+        else{
+            res.status(200).json({message: 'No discounted products found', products});
+        }
     } catch (err) {
         res.status(500).json({ message: "Error fetching discounted products" });
     }

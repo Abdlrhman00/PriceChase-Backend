@@ -20,6 +20,8 @@ const productSchema = new mongoose.Schema({
     TopReviews: [reviewSchema],
     //Attributes for popular products
     Views: { type: Number, default: 0 }, // Track views
+    isPopular: {type: Boolean, default: false},
+    priceDrop: {type: Boolean, default: false}
 });
 
 const Product = mongoose.models.Product || mongoose.model('Product', productSchema, 'Product');
