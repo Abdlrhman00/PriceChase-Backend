@@ -37,7 +37,7 @@ mongoose
 
 // Import Routes
 //const authRoutes = require('./routes/authRoutes');
-//const productRoutes = require('./routes/productRoutes');
+const productRoutes = require('./routes/productRoutes');
 const categoryRoutes = require("./routes/categoryRoutes");
 const wishlistRoutes = require('./routes/wishlistRoutes');
 const adminRoutes = require("./routes/adminRoutes");
@@ -47,7 +47,7 @@ const userRoutes = require("./routes/userRoutes");
 
 // API Routes
 //app.use('/auth', authRoutes);          // User authentication and profile management
-//app.use('/products', productRoutes);    // Product management
+app.use('/products', productRoutes);    // Product management
 app.use("/categories", categoryRoutes); // Category and Subcategory management
 app.use('/subcategories', subCategoryRoutes);
 app.use('/wishlist', wishlistRoutes);   // User wishlist handling

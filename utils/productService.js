@@ -8,8 +8,8 @@ const updatePopularProducts = async () => {
         for (let subcategory of subcategories) {
             // Fetch top 10 products for this subcategory, sorted by views
             const topProducts = await Product.find({ subcategory })
-                .sort({ viewCount: -1 })
-                .limit(10);
+                .sort({ Views: -1 })
+                .limit(3);
 
             // Reset the 'isPopular' field for all products in this subcategory
             await Product.updateMany({ subcategory }, { isPopular: false });
