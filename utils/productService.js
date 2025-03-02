@@ -34,15 +34,15 @@ const getProductFilters = (query) => {
     let { popular, minPrice, maxPrice, rating, sortBy, order = "asc", limit = 10, cursor } = query;
 
     let filter = {};
-    let sortCriteria = {}; 
+    let sortCriteria = {};
     let defaultSort = "popular"; // Default sort order
 
     // 📌 Apply filters based on the request query
     if (popular === "true") {
         filter.Views = { $gt: 0 }; // Only products with views > 0
         defaultSort = "popular"; // Set default sort to "popular" if this filter is applied
-    } 
-    if (rating) {
+    }
+    else if (rating) {
         const ratingValue = parseFloat(rating);
         const nextRating = Number.isInteger(ratingValue) ? ratingValue + 1 : Math.ceil(ratingValue);
 
@@ -57,7 +57,7 @@ const getProductFilters = (query) => {
             defaultSort = "rating"; // If popular isn't applied, set rating as default sort
         }
     } 
-    if (minPrice || maxPrice) {
+    else if (minPrice || maxPrice) {
         filter.Price = {};  
         if (minPrice) filter.Price.$gte = parseFloat(minPrice);
         if (maxPrice) filter.Price.$lte = parseFloat(maxPrice);
