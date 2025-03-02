@@ -5,7 +5,7 @@ const bcrypt = require("bcryptjs");
 const wishlistSchema = new mongoose.Schema({
   productID: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
   addedDate: { type: Date, default: Date.now },
-});
+},{_id : false});
 
 const refreshTokenSchema = new mongoose.Schema({
   token: { type: String, required: true },

@@ -10,13 +10,17 @@ const path = require("path");
 const cookieParser = require('cookie-parser');
 const AppError = require("./utils/AppError");
 const globalError = require("./middleware/errorMiddleware");
+
 const fs = require("fs");
 const Product = require("./models/product"); 
+const { error } = require("console");
+
 // Configuration
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 const mongoURI = process.env.MONGODB_URI;
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -55,20 +59,19 @@ mongoose
 //const authRoutes = require('./routes/authRoutes');
 //const productRoutes = require('./routes/productRoutes');
 const categoryRoutes = require("./routes/categoryRoutes");
-//const wishlistRoutes = require('./routes/wishlistRoutes');
+const wishlistRoutes = require('./routes/wishlistRoutes');
 const adminRoutes = require("./routes/adminRoutes");
-
+const subCategoryRoutes = require('./routes/subCategoryRoutes')
 const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
 
-const { error } = require("console");
 // API Routes
 //app.use('/auth', authRoutes);          // User authentication and profile management
 //app.use('/products', productRoutes);    // Product management
 app.use("/categories", categoryRoutes); // Category and Subcategory management
-//app.use('/wishlist', wishlistRoutes);   // User wishlist handling
+app.use('/subcategories', subCategoryRoutes);
+app.use('/wishlist', wishlistRoutes);   // User wishlist handling
 app.use("/admin", adminRoutes); // Admin-only endpoints (user management, product deletion, etc.)
-
 app.use("/user", userRoutes);
 app.use("/products", productRoutes);
 
