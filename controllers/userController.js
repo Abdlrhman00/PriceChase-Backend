@@ -1,72 +1,91 @@
 const User = require("../models/user");
+const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const path = require("path");
 const clearCookies = require("../utils/clearCookies");
 const deleteProfilePhoto = require("../utils/deleteProfilePhoto");
 const sendError = require("../utils/sendError");
+const sendVerificationLink = require("../utils/sendVerificationLink");
+const validateUser = require("../utils/validateUser");
+const cloudinaryDelete = require("../utils/cloudinaryDelete");
 const sendEmail = require("../utils/sendEmail");
 const generateAndSetTokens = require("../utils/generateAndSetTokens ");
 
-exports.Signup = async (req, res, next) => {
+exports.signup = async (req, res, next) => {
   const { email, password, firstName, lastName } = req.body;
-  const oldUser = await User.findOne({ email });
+  const oldUser = await User.findOne({ email: email.toLowerCase() });
 
-  if (oldUser) {
-    // Delete the uploaded photo if it exists
-    if (req.file) {
-      const filePath = path.join(__dirname, "..", "uploads", req.file.filename);
-      deleteProfilePhoto(filePath);
-    }
-  
-    return next(sendError(409, "userExists"));
-  }
+  if (oldUser) return next(sendError(409, "userExists"));
 
-  console.log(email, password, firstName, lastName)
-  if (!email || !password || !firstName || !lastName)
-    return next(sendError(400, "missingFields"));
-
-  // encrypt the password
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  // If the user uploads a photo take it otherwise take the default one
-  const profilePhoto = req.file
-    ? req.file.filename
-    : "uploads/profile_photo.jpg";
-
-  const newuser = new User({
+  const newUser = new User({
     firstName,
     lastName,
-    email,
-    password: hashedPassword,
-    profilePhoto,
+    email, // Hashed automatically by the pre-save hook
+    password,
   });
 
-  // Generate and set tokens
-  await generateAndSetTokens(newuser, res);
+  await newUser.save();
+  sendVerificationLink(email, newUser.id);
 
   return res.status(201).json({
-    message: "User successfully registered",
+    message: "User registered! Please verify your email.",
     data: {
       firstName,
       lastName,
       email,
-      profilePhoto,
     },
   });
 };
 
-exports.Login = async (req, res, next) => {
+// Verify user's email
+exports.verifyEmail = async (req, res, next) => {
+  try {
+    const { token } = req.query; // Get the token from the query parameter
+
+    if (!token) return next(sendError(400, "noToken"));
+
+    // Decode the JWT token and verify it
+    const decoded = verifyJWT(token);
+
+    const user = await User.findById(decoded.id); // Find the user by ID
+
+    if (!user) return next(sendError(400, "invalidToken"));
+
+    if (user.isVerified) return next(sendError(400, "alreadyVerified"));
+
+    // Mark the user as verified
+    user.isVerified = true;
+    await user.save();
+
+    res.status(200).json({ message: "Email verified successfully!" });
+  } catch (err) {
+    return next(sendError(400, "invalidToken"));
+  }
+};
+
+exports.login = async (req, res, next) => {
+  const userId = req.user?.id;
+
+  if (userId) {
+    return res.status(200).json({
+      message: "User is already logged in.",
+    });
+  }
+
   const { email, password } = req.body;
 
   if (!email || !password) return next(sendError(400, "missingFields"));
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email: email.toLowerCase() });
 
   if (!user) return next(sendError(404, "user"));
 
-  const isValid = await bcrypt.compare(password, user.password);
+  // Compare the password with the hashed password in the database
+  const isMatch = await user.comparePassword(password);
 
-  if (!isValid) return next(sendError(401));
+  if (!isMatch) return next(sendError(401, "Invalidcardinalities"));
+
+  if (!user.isVerified) return next(sendError(403, "verifyEmail"));
 
   // Generate and set tokens
   await generateAndSetTokens(user, res);
@@ -78,73 +97,66 @@ exports.Login = async (req, res, next) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        profilePhoto: user.profilePhoto,
       },
     },
   });
 };
 
-exports.GetAccountData = async (req, res, next) => {
+exports.getAccountData = async (req, res, next) => {
   const userId = req.user.id;
 
   if (!userId) {
-    return next(sendError(404, "user"));
+    return next(sendError(401));
   }
 
-  const user = await User.findById(userId).select(
-    "firstName lastName email profilePhoto"
-  );
+  const user = await User.findById(userId)
+    .select("firstName lastName email profilePicture.url")
+    .lean();
 
   if (!user) return next(sendError(404, "user"));
 
   return res.status(200).json({
+    message: "User account data retrieved successfully.",
     data: {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
-      profilePhoto: user.profilePhoto,
+      profilePicture: user.profilePicture?.url,
     },
   });
 };
 
-exports.UpdateAccount = async (req, res, next) => {
-  const { firstName, lastName, email } = req.body;
-  const userId = req.user.id;
+exports.updateAccount = async (req, res, next) => {
+  const { firstName, lastName, email,profilePictureUrl,profilePicturePublic_id } = req.body;
+  const user = await validateUser(req, next);
+  const duplicateUser = await User.findOne({ email });
 
-  if (!userId) return next(sendError(404, "user"));
-  const user = await User.findById(userId);
-
-  if (!user) return next(sendError(404, "user"));
-
-  // Validate email uniqueness
-  if (email && email !== user.email) {
-    const emailExists = await User.findOne({ email });
-    if (emailExists) return next(sendError(409, "emailExists"));
-    user.email = email;
+  // Validate uniqueness
+  if (duplicateUser && duplicateUser.id !== user._id) {
+    if (duplicateUser.email === email)
+      return next(sendError(409, "userExists"));
   }
 
   // Update fields only if provided
+
+  if (email) user.email = email;
+
   if (firstName) user.firstName = firstName;
   if (lastName) user.lastName = lastName;
 
-  if (req.file) {
-    const newPhotoPath = req.file.filename;
 
-    // Check if photo is not the default
-    if (
-      user.profilePhoto &&
-      user.profilePhoto !== "uploads/profile_photo.jpg"
-    ) {
-      const oldPhotoPath = path.join(
-        __dirname,
-        "..",
-        "uploads",
-        user.profilePhoto
-      );
-      deleteProfilePhoto(oldPhotoPath); // Delete the old photo
+
+  if (profilePictureUrl) {
+    const oldPublic_id = user.profilePicture.public_id;
+
+    user.profilePicture.url = profilePictureUrl;
+    user.profilePicture.public_id = profilePicturePublic_id;
+
+    if (oldPublic_id !== process.env.DEFAULT_PROFILE_PICTURE_PUBLIC_ID) {
+      await cloudinaryDelete(oldPublic_id); // Delete the old Picture
     }
-    user.profilePhoto = newPhotoPath;
   }
+
 
   await user.save();
   return res.status(200).json({
@@ -153,84 +165,58 @@ exports.UpdateAccount = async (req, res, next) => {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
-      profilePhoto: user.profilePhoto,
+      profilePhoto: user.profilePicture,
     },
   });
 };
 
-exports.DeleteAccount = async (req, res, next) => {
-  const userId = req.user.id;
-
-  if (!userId) return next(sendError(404, "user"));
-
-  const user = await User.findById(userId);
-
-  if (!user) return next(sendError(404, "user"));
-
-  // If the user has a profile photo and it's not the default one, delete it from the filesystem
-  if (user.profilePhoto && user.profilePhoto !== "uploads/profile_photo.jpg") {
-    const oldPhotoPath = path.join(
-      __dirname,
-      "..",
-      "uploads",
-      user.profilePhoto
-    );
-    deleteProfilePhoto(oldPhotoPath);
-  }
-
-  // Clear authentication cookies
-  clearCookies(res);
-
-  await User.findByIdAndDelete(userId);
-
-  return res.status(200).json({
-    message: "Account successfully deleted",
-  });
-};
-
-exports.ChangePassword = async (req, res, next) => {
+exports.changePassword = async (req, res, next) => {
   const { currentPassword, newPassword } = req.body;
-  const userId = req.user.id;
+  const userId = req.user?.id;
+  console.log(userId);
 
   if (!userId) return next(sendError(404, "user"));
 
-  const user = await User.findById(userId);
-
-  if (!user) return next(sendError(404, "user"));
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  const user = await User.findById(userId).session(session);
+  if (!user) {
+    await session.abortTransaction();
+    session.endSession();
+     return next(sendError(404, "user"));
+  }
 
   // Check if the current password is correct
   const isValid = await bcrypt.compare(currentPassword, user.password);
-  if (!isValid) return next(sendError(401, "currentPassword"));
+  if (!isValid) {
+    await session.abortTransaction();
+    session.endSession();
+    return next(sendError(401, "Current password is incorrect."));
+  }
 
-  const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+  // Update the password
+  user.password = newPassword; // The pre("save") hook will hash this password
 
-  user.password = hashedNewPassword;
+  // Clear all refresh tokens
+  user.refreshTokens = [];
+
+  // Save the user (this will trigger schema validation and password hashing)
+  await user.save({ session });
+
+  // Commit the transaction
+  await session.commitTransaction();
+  session.endSession();
 
   clearCookies(res);
-  user.refreshTokens = []; // Invalidate all sessions
-
-  await user.save();
-
-  await sendEmail(
-    user.email,
-    "Password Change Notification",
-    "Your password has been successfully changed.",
-    "<b>Your password has been successfully changed.</b>"
-  );
 
   return res.status(200).json({
     message: "Password updated, please log in again.",
   });
 };
 
-exports.Logout = async (req, res, next) => {
-  const userId = req.user.id;
+exports.logout = async (req, res, next) => {
+  const user = await validateUser(req, next);
 
-  if (!userId) return next(sendError(404, "user"));
-
-  const user = await User.findById(userId);
-
-  if (!user) return next(sendError(404, "user"));
 
   // Clear the refresh tokens array
   user.refreshTokens = [];
@@ -241,5 +227,26 @@ exports.Logout = async (req, res, next) => {
 
   return res.status(200).json({
     message: "Successfully logged out",
+  });
+};
+
+exports.deleteAccount = async (req, res, next) => {
+  const user = await validateUser(req, next);
+
+  const public_id = user.profilePicture.public_id;
+  const defaultPicturePublicId = process.env.DEFAULT_PROFILE_PICTURE_PUBLIC_ID;
+
+  // If the user has a profile photo and it's not the default one
+
+  if (public_id !== defaultPicturePublicId) 
+    await cloudinaryDelete(public_id); 
+
+  // Clear authentication cookies
+  clearCookies(res);
+
+  await User.findByIdAndDelete(user._id);
+
+  return res.status(200).json({
+    message: "Account successfully deleted",
   });
 };
