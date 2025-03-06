@@ -13,5 +13,5 @@ router.get("/popular", getPopularProducts);
 router.get("/discounts", getDiscountedProducts);
 router.get("/:id", asyncHandler(productController.getProductById));
 router.put("/:productId/view", incrementViewCount);
-
+router.post("/creatProduct");
 module.exports = router;
