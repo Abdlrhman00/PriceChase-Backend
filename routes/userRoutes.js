@@ -12,7 +12,7 @@ router.post(
   validateRequiredFields("user"),
   asyncHandler(userController.signup)
 );
-
+router.get("/verify-email", asyncHandler(userController.verifyEmail));
 router.post("/login",optionalAuth, asyncHandler(userController.login));
 
 router.use("/account", verifyToken);
