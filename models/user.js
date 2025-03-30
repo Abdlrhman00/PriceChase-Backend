@@ -58,7 +58,7 @@ const userSchema = new mongoose.Schema({
       message: "Please provide a valid email address.",
     },
   },
-  isVerified: { type: Boolean, default: true },
+  isVerified: { type: Boolean, default: false },
   profilePicture: {
     url: {
       type: String,
