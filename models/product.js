@@ -6,30 +6,22 @@ const reviewSchema = new mongoose.Schema({
 });
 
 const productSchema = new mongoose.Schema({
-  Title: { type: String, required: true },
-  Image: { type: String, required: true },
-  ProductPage: { type: String, required: true },
-  AverageRating: { type: Number, min: 0, max: 5, default: 0 },
-  Price: { type: Number, required: true },
-  Currency: { type: String, required: true },
-  Description: { type: String, required: true },
-  Availability: {
-    type: String,
-    enum: ["IN_STOCK", "OUT_OF_STOCK", "PRE_ORDER"],
-    required: true,
-  },
-  SubCategoryID: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "SubCategory",
-    required: true,
-  },
-  CategoryID: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Category",
-    required: true,
-  },
-  StoreName: { type: String, required: true },
-  TopReviews: [reviewSchema],
+    Title: { type: String, required: true },
+    Image: { type: String, required: true },
+    ProductPage: { type: String, required: true },
+    AverageRating: { type: Number, min: 0, max: 5 },
+    Price: { type: Number, required: true },
+    Currency: { type: String, required: true },
+    Description: { type: String, required: true },
+    Availability: { type: String, enum: ['IN_STOCK', 'OUT_OF_STOCK', 'PRE_ORDER'], required: true },
+    SubCategoryID: { type: mongoose.Schema.Types.ObjectId, ref: 'SubCategory', required: true },
+    CategoryID: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+    StoreID: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true },
+    TopReviews: [reviewSchema],
+    //Attributes for popular products
+    Views: { type: Number, default: 0 }, // Track views
+    isPopular: {type: Boolean, default: false},
+    priceDrop: {type: Boolean, default: false}
 });
 
 const Product =

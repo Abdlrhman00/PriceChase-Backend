@@ -76,6 +76,16 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
+// Manually Trigger Popular Product Update (Admin Only)
+exports.triggerPopularUpdate = async (req, res) => {
+    try {
+        await updatePopularProducts();
+        res.json({ message: "Popular products updated successfully" });
+    } catch (err) {
+        res.status(500).json({ message: "Error updating popular products" });
+    }
+};
+
 // // Similarly, implement create, update, and delete for Categories and Subcategories
 // exports.createCategory = async (req, res) => { /*...*/ };
 // exports.updateCategory = async (req, res) => { /*...*/ };
