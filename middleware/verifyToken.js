@@ -1,25 +1,26 @@
 const User = require("../models/user");
-const jwt = require("jsonwebtoken");
 const setCookie = require("../utils/setCookie");
-const AppError = require("../utils/AppError");
 const generateJWT = require("../utils/generateJWT");
 const validateRefreshToken = require("../utils/validateRefreshToken");
 const sendError = require("../utils/sendError");
+const verifyJWT = require("../utils/verifyJWT");
 
 const verifyToken = async (req, res, next) => {
   const access_token = req.cookies.access_token;
 
   const refresh_token = req.cookies.refresh_token;
+  console.log(access_token," ",refresh_token);
+
 
   if (!access_token) {
     // If no access token
-    if (!refresh_token) return next(sendError(401));
-
+    if (!refresh_token) {
+      return next(sendError(401));
+    }
     try {
-      const decodedRefreshToken = jwt.verify(
-        refresh_token,
-        process.env.JWT_SECRET_KEY
-      );
+      console.log("1rrr")
+      const decodedRefreshToken = verifyJWT(refresh_token);
+      console.log("2rrr")
 
       const user = await User.findById(decodedRefreshToken.id);
 
@@ -38,20 +39,19 @@ const verifyToken = async (req, res, next) => {
         },
         "5m"
       );
+      setCookie(res, "access_token", accessToken, 5 * 60 * 1000);
 
       // Attach user details to the request
       req.user = decodedRefreshToken;
-
-      setCookie(res, "access_token", accessToken, 5 * 60 * 1000);
     } catch (err) {
-      return next(sendError(401));
+      if (err.name === "TokenExpiredError") {
+        return next(sendError(401, "token")); // Specific message for expired token
+      }
+      return next(sendError(401)); // Generic message for other errors
     }
   } else {
     try {
-      const decodedAccessToken = jwt.verify(
-        access_token,
-        process.env.JWT_SECRET_KEY
-      );
+      const decodedAccessToken = verifyJWT(access_token);
 
       req.user = decodedAccessToken;
     } catch (err) {

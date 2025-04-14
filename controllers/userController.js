@@ -9,8 +9,8 @@ const sendVerificationLink = require("../utils/sendVerificationLink");
 const validateUser = require("../utils/validateUser");
 const cloudinaryDelete = require("../utils/cloudinaryDelete");
 const sendEmail = require("../utils/sendEmail");
-const generateAndSetTokens = require("../utils/generateAndSetTokens ");
-
+const generateAndSetTokens = require("../utils/generateAndSetTokens");
+const verifyJWT = require("../utils/verifyJWT");
 exports.signup = async (req, res, next) => {
   const { email, password, firstName, lastName } = req.body;
   const oldUser = await User.findOne({ email: email.toLowerCase() });
@@ -90,6 +90,10 @@ exports.login = async (req, res, next) => {
   // Generate and set tokens
   await generateAndSetTokens(user, res);
 
+  const access_token = req.cookies.access_token;
+
+  const refresh_token = req.cookies.refresh_token;
+
   return res.status(200).json({
     message: "User successfully logged In",
     data: {
@@ -97,6 +101,7 @@ exports.login = async (req, res, next) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        profilePicture: user.profilePicture.url,
       },
     },
   });
@@ -127,7 +132,13 @@ exports.getAccountData = async (req, res, next) => {
 };
 
 exports.updateAccount = async (req, res, next) => {
-  const { firstName, lastName, email,profilePictureUrl,profilePicturePublic_id } = req.body;
+  const {
+    firstName,
+    lastName,
+    email,
+    profilePictureUrl,
+    profilePicturePublic_id,
+  } = req.body;
   const user = await validateUser(req, next);
   const duplicateUser = await User.findOne({ email });
 
@@ -144,8 +155,6 @@ exports.updateAccount = async (req, res, next) => {
   if (firstName) user.firstName = firstName;
   if (lastName) user.lastName = lastName;
 
-
-
   if (profilePictureUrl) {
     const oldPublic_id = user.profilePicture.public_id;
 
@@ -156,7 +165,6 @@ exports.updateAccount = async (req, res, next) => {
       await cloudinaryDelete(oldPublic_id); // Delete the old Picture
     }
   }
-
 
   await user.save();
   return res.status(200).json({
@@ -183,7 +191,7 @@ exports.changePassword = async (req, res, next) => {
   if (!user) {
     await session.abortTransaction();
     session.endSession();
-     return next(sendError(404, "user"));
+    return next(sendError(404, "user"));
   }
 
   // Check if the current password is correct
@@ -217,7 +225,6 @@ exports.changePassword = async (req, res, next) => {
 exports.logout = async (req, res, next) => {
   const user = await validateUser(req, next);
 
-
   // Clear the refresh tokens array
   user.refreshTokens = [];
   await user.save();
@@ -238,8 +245,7 @@ exports.deleteAccount = async (req, res, next) => {
 
   // If the user has a profile photo and it's not the default one
 
-  if (public_id !== defaultPicturePublicId) 
-    await cloudinaryDelete(public_id); 
+  if (public_id !== defaultPicturePublicId) await cloudinaryDelete(public_id);
 
   // Clear authentication cookies
   clearCookies(res);
