@@ -93,4 +93,81 @@ const getProductFilters = (query) => {
     return { filter, sortCriteria, limitNum };
 };
 
-module.exports = { updatePopularProducts, getProductFilters};
+
+const insertProdcuts = async(storeName) => {
+    try {
+        // Path to your scraped JSON file
+        const jsonFilePath = path.join(__dirname, `../data/${storeName}_products.json`);
+
+        // Read JSON File
+        const rawData = fs.readFileSync(jsonFilePath);
+        const products = JSON.parse(rawData);
+
+        for (const scrapedProduct of products) {
+            try {
+                // Fetch Store ID
+                const store = await Store.findOne({ StoreName: scrapedProduct.StoreName });
+                if (!store) {
+                    console.warn(`Store not found: ${scrapedProduct.StoreName}`);
+                    continue;
+                }
+                console.log("Store: ", scrapedProduct.StoreName)
+
+                // Fetch Category ID
+                const category = await Category.findOne({ CategoryName: scrapedProduct.Category });
+                if (!category) {
+                    console.warn(`Category not found: ${scrapedProduct.Category}`);
+                    continue;
+                }
+                console.log("Category: ", scrapedProduct.Category)
+
+                // Fetch SubCategory ID
+                const subCategoryList = await SubCategory.find({ SubCategoryName: scrapedProduct.SubCategory });
+                let finalSubCategoryID = null;
+                for (const subCategory of subCategoryList) {
+                    if (category.SubCategoryIDs.some(subID => subID.equals(subCategory._id))) {
+                        finalSubCategoryID = subCategory._id;
+                        break;
+                    }
+                }
+
+                if (!finalSubCategoryID) {
+                    console.warn(`SubCategory not linked to Category: ${scrapedProduct.SubCategory}`);
+                    continue;
+                }
+                console.log("SubCategory: ", scrapedProduct.SubCategory)
+
+                // Prepare Product Data
+                const productData = {
+                    Title: scrapedProduct.Title,
+                    Image: scrapedProduct.Image,
+                    ProductPage: scrapedProduct.ProductPage,
+                    AverageRating: scrapedProduct.AverageRating,
+                    Price: scrapedProduct.Price,
+                    Currency: scrapedProduct.Currency,
+                    Description: scrapedProduct.Description,
+                    Availability: scrapedProduct.Availability,
+                    SubCategoryID: finalSubCategoryID,
+                    CategoryID: category._id,
+                    StoreID: store._id,
+                    TopReviews: scrapedProduct.TopReviews,
+                    Views: 0,
+                    isPopular: false,
+                    priceDrop: false
+                };
+
+                // Insert Product
+                await Product.create(productData);
+                console.log(`✅ Inserted: ${scrapedProduct.Title}`);
+            } catch (err) {
+                console.error(`❌ Error processing product: ${scrapedProduct.Title}`, err);
+            }
+        }
+
+        console.log("✅ All products inserted successfully!");
+    } catch (error) {
+        console.error("❌ Error reading or inserting products:", error);
+    }
+}
+
+module.exports = { updatePopularProducts, getProductFilters, insertProdcuts};
