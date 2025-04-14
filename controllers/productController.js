@@ -1,7 +1,7 @@
 const Product = require("../models/product");
 const mongoose = require("mongoose");
 const sendError = require("../utils/sendError");
-const { updatePopularProducts } = require("../utils/productService");
+const { updatePopularProducts,  getProductFilters} = require("../utils/productService");
 
 // Get Popular Products
 exports.getPopularProducts = async (req, res) => {
@@ -45,20 +45,56 @@ exports.getDiscountedProducts = async (req, res) => {
 };
 
 exports.getAllProducts = async (req, res, next) => {
-  const products = await Product.find();
+  // const products = await Product.find();
 
-  if (!products || products.length === 0) {
-    return res.status(200).json({
-      message: "No products found.",
-      products: [],
+  // if (!products || products.length === 0) {
+  //   return res.status(200).json({
+  //     message: "No products found.",
+  //     products: [],
+  //   });
+  // }
+
+  // return res.status(200).json({
+  //   message: "Products fetched successfully",
+  //   count: products.length,
+  //   data: products,
+  // });
+  try {
+    let {limit = 10, cursor=null} = req.query
+    let filter = {}
+
+    // 📌 Convert pagination values
+    const limitNum = parseInt(limit);
+
+    // 📌 Cursor-based Pagination
+    if (cursor) {
+        filter._id = { $gt: cursor }; 
+    }
+
+    //console.log(limitNum, cursor)
+
+    const products = await Product.find(filter).limit(limitNum + 1);
+
+    let nextCursor = null;
+    if (products.length > limitNum) {
+        nextCursor = products[limitNum]._id;  // Set the next cursor to the last item of the current page
+        products.pop();  // Remove the extra item to match the limit
+    }
+
+    if (!products.length) {
+        return res.status(404).json({ message: "No products found" });
+    }
+
+    res.status(200).json({
+    message: "Users fetched successfully",
+    nextCursor,
+    totalProducts: products.length,
+    products,
     });
+    } catch (error) {
+    console.log(error);
+    res.status(400).json({ message: "Error getting products", error });
   }
-
-  return res.status(200).json({
-    message: "Products fetched successfully",
-    count: products.length,
-    data: products,
-  });
 }; 
 
 exports.getProductById = async (req, res, next) => {
