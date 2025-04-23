@@ -6,6 +6,7 @@ const reviewSchema = new mongoose.Schema({
 });
 
 const productSchema = new mongoose.Schema({
+    Sku: { type: String, required: false},
     Title: { type: String, required: true },
     Image: { type: String, required: true },
     ProductPage: { type: String, required: true },
@@ -21,7 +22,8 @@ const productSchema = new mongoose.Schema({
     //Attributes for popular products
     Views: { type: Number, default: 0 }, // Track views
     isPopular: {type: Boolean, default: false},
-    priceDrop: {type: Boolean, default: false}
+    priceDrop: {type: Boolean, default: false},
+    hidden: { type: Boolean, default: false }
 });
 
 const Product =

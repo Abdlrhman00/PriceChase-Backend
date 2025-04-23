@@ -9,16 +9,16 @@ const { authorizeRoles } = require('../middleware/authorizeRoles');
 // } = require('../controllers/adminController');
 
 const {
-    updateProduct, deleteProduct, getAllProducts,
-    getAllUsers, deleteUser
+    updateProduct, fetchAndUpdateProducts, deleteProduct, getAllProducts,
+    getAllUsers, deleteUser, hideProduct
 } = require('../controllers/adminController');
 
 router.get('/products', getAllProducts);  // Update a product
 // Admin routes for Products
 //router.post('/products', isAdmin, createProduct);     // Create a product
-//router.put('/products/:id', isAdmin, updateProduct);  // Update a product
-router.put('/products/:id', updateProduct);  // Update a product
-//router.delete('/products/:id', isAdmin, deleteProduct); // Delete a product
+router.patch('/products/:storeName', updateProduct);  // updateProduct a product
+router.put('/products/:id', fetchAndUpdateProducts);  // Update a product
+router.patch("/hide/:id", hideProduct);
 router.delete('/products/:id', deleteProduct); // Delete a product
 
 // // Admin routes for Categories
