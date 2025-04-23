@@ -10,6 +10,7 @@ const path = require("path");
 const cookieParser = require('cookie-parser');
 const AppError = require("./utils/AppError");
 const globalError = require("./middleware/errorMiddleware");
+const elasticClient = require('./utils/elasticsearchClient');
 
 const fs = require("fs");
 const Product = require("./models/product"); 
@@ -59,7 +60,7 @@ mongoose
   })
   .then(() => {console.log("Connected to MongoDB")/*,insertProducts()*/})
   .catch((error) => console.error("MongoDB connection error:", error));
-
+ 
 
 /*  const insertProducts = async () => {
     try {
@@ -109,3 +110,12 @@ app.use(globalError);
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+(async () => {
+  try {
+    const health = await elasticClient.cluster.health({});
+    console.log('Elasticsearch cluster health:', health);
+  } catch (err) {
+    console.error('Elasticsearch connection error:', err);
+  }
+})();
