@@ -51,7 +51,7 @@ const errorMessages = {
     Photo: "Photo not found",
     post: "Post not found",
     comment: "Comment not found",
-    matchingPosts:"No matching posts found",
+    matchingProducts:"No matching products found",
     notification:"Notification not found",
     BusinessName:"BusinessName not found",
     approval:"Approval URL not found",

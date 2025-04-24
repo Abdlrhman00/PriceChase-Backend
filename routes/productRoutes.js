@@ -9,6 +9,7 @@ const {
 } = require('../controllers/productController');
 
 router.get("/", asyncHandler(productController.getAllProducts));
+router.get("/search", asyncHandler(productController.searchProducts));
 router.get("/popular", getPopularProducts);
 router.get("/discounts", getDiscountedProducts);
 router.get("/:id", asyncHandler(productController.getProductById));

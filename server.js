@@ -11,6 +11,7 @@ const cookieParser = require('cookie-parser');
 const AppError = require("./utils/AppError");
 const globalError = require("./middleware/errorMiddleware");
 const elasticClient = require('./utils/elasticsearchClient');
+const indexAllProducts =  require("./utils/indexAllProducts")
 
 const fs = require("fs");
 const Product = require("./models/product"); 
@@ -18,7 +19,7 @@ const { error } = require("console");
 
 // Configuration
 dotenv.config();
-const app = express();
+const app = express(); 
 const PORT = process.env.PORT || 5000;
 const mongoURI = process.env.MONGODB_URI;
 
@@ -86,7 +87,6 @@ const wishlistRoutes = require('./routes/wishlistRoutes');
 const adminRoutes = require("./routes/adminRoutes");
 const subCategoryRoutes = require('./routes/subCategoryRoutes')
 const userRoutes = require("./routes/userRoutes");
-
 // API Routes
 //app.use('/auth', authRoutes);          // User authentication and profile management
 app.use('/products', productRoutes);    // Product management
@@ -95,7 +95,6 @@ app.use('/subcategories', subCategoryRoutes);
 app.use('/wishlist', wishlistRoutes);   // User wishlist handling
 app.use("/admin", adminRoutes); // Admin-only endpoints (user management, product deletion, etc.)
 app.use("/user", userRoutes);
-
 
 // Handle any invalid route
 app.all("*", (req, res, next) => {
@@ -111,11 +110,16 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-(async () => {
+const checkESConnection = async () => {
   try {
-    const health = await elasticClient.cluster.health({});
-    console.log('Elasticsearch cluster health:', health);
-  } catch (err) {
-    console.error('Elasticsearch connection error:', err);
+    //await indexAllProducts();
+
+    const health = await elasticClient.cluster.health();
+    console.log("✅ Elasticsearch is healthy:", health);
+  } catch (error) {
+    console.error("❌ Elasticsearch connection error:", error.message || error);
+    // Optionally: retry later, notify, or continue without ES
   }
-})();
+};
+
+checkESConnection();

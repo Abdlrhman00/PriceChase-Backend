@@ -1,119 +1,115 @@
+// utils/elasticsearchHelpers.js
 const { Client } = require('@elastic/elasticsearch');
 const fs = require('fs');
+const Category = require('../models/category');  // Import Category model
+const SubCategory = require('../models/subCategory');  // Import SubCategory model
 
-const client = new Client({ node: 'http://localhost:9200' });
+const client = new Client({
+  node: process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
+});
+
 const INDEX_NAME = 'products';
 
-async function searchProduct(query, category = null, subcategory = null, minPrice = null, maxPrice = null, minRating = null) {
-    query = query.trim().toLowerCase();
-    if (!query) {
-        console.log("Empty query. Please provide a search term.");
-        return [];
-    }
+async function searchProduct(
+  query,
+  categoryName = null,
+  subCategoryName = null,
+  minPrice = null,
+  maxPrice = null,
+  minRating = null
+) {
+  query = query.trim().toLowerCase();
+  if (!query) {
+    console.log("Empty query. Please provide a search term.");
+    return [];
+  }
 
-    const searchBody = {
-        query: {
-            bool: {
-                must: [
-                    {
-                        bool: {
-                            should: [
-                                {
-                                    match_phrase: {
-                                        Title: {
-                                            query: query,
-                                            boost: 10
-                                        }
-                                    }
-                                },
-                                {
-                                    match: {
-                                        Title: {
-                                            query: query,
-                                            operator: "and",
-                                            minimum_should_match: "100%",
-                                            boost: 5
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                ],
-                filter: []
-            }
-        },
-        sort: [
-            { Price: { order: 'asc' } }
-        ],
-        min_score: 1.0
-    };
+  // Fetch category and subcategory IDs from the DB
+  let categoryId = null;
+  let subCategoryId = null;
 
+  if (categoryName) {
+    const category = await Category.findOne({ name: categoryName }).exec();
     if (category) {
-        searchBody.query.bool.filter.push({ term: { "Category.keyword": category } });
+      categoryId = category._id;
     }
+  }
 
-    if (subcategory) {
-        searchBody.query.bool.filter.push({ term: { "SubCategory.keyword": subcategory } });
+  if (subCategoryName) {
+    const subCategory = await SubCategory.findOne({ name: subCategoryName }).exec();
+    if (subCategory) {
+      subCategoryId = subCategory._id;
     }
+  }
 
-    if (minPrice !== null || maxPrice !== null) {
-        const priceRange = {};
-        if (minPrice !== null) priceRange.gte = minPrice;
-        if (maxPrice !== null) priceRange.lte = maxPrice;
-        searchBody.query.bool.filter.push({ range: { Price: priceRange } });
-    }
+  const searchBody = {
+    query: {
+      bool: {
+        must: [
+          {
+            bool: {
+              should: [
+                { match_phrase: { Title: { query, boost: 10 } } },
+                {
+                  match: {
+                    Title: {
+                      query,
+                      operator: "and",
+                      minimum_should_match: "100%",
+                      boost: 5
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        filter: []
+      }
+    },
+    sort: [{ Price: { order: 'asc' } }],
+      size: 100 
+  };
 
-    if (minRating !== null) {
-        searchBody.query.bool.filter.push({ range: { AverageRating: { gte: minRating } } });
-    }
-
-    try {
-        const response = await client.search({
-            index: INDEX_NAME,
-            body: searchBody
-        }); 
-
-        const searchedList = response.hits.hits.map(hit => {
-            const product = hit._source;
-            console.log("Title:", product.Title);
-            console.log("StoreName:", product.StoreName);
-            console.log("Category:", product.Category); 
-            console.log("SubCategory:", product.SubCategory);
-            console.log("Price:", product.Price);
-            console.log("AverageRating:", product.AverageRating);
-            console.log("Description:", product.Description);
-            console.log("Availability:", product.Availability);
-            console.log("ProductPage:", product.ProductPage);
-            console.log("Image:", product.Image);
-            console.log('-'.repeat(40));
-
-            return {
-                Title: product.Title,
-                StoreName: product.StoreName,
-                Category: product.Category,
-                SubCategory: product.SubCategory,
-                Price: product.Price,
-                AverageRating: product.AverageRating,
-                Description: product.Description,
-                Availability: product.Availability,
-                ProductPage: product.ProductPage,
-                Image: product.Image
-            };
-        });
-
-        const outputFilename = `search_results_${query.replace(/ /g, "_")}.json`;
-        fs.writeFileSync(outputFilename, JSON.stringify(searchedList, null, 2), 'utf8');
-        console.log(`\nResults have been saved to ${outputFilename}`);
-
-        return searchedList;
-
-    } catch (error) {
-        console.error('Search error:', error.meta?.body?.error || error.message);
-    }
+  // Use the fetched category and subcategory IDs in the Elasticsearch query
+if (categoryName) {
+  searchBody.query.bool.filter.push({ term: { "Category.keyword": categoryName } });
+}
+if (subCategoryName) {
+  searchBody.query.bool.filter.push({ term: { "SubCategory.keyword": subCategoryName } });
 }
 
-// Example usage
-searchProduct("sneakers", null, null, 10, 100, 3.5);
+  // Additional filters for price range and rating
+  if (minPrice !== null || maxPrice !== null) {
+    const range = {};
+    if (minPrice !== null) range.gte = minPrice;
+    if (maxPrice !== null) range.lte = maxPrice;
+    searchBody.query.bool.filter.push({ range: { Price: range } });
+  }
+  if (minRating !== null) {
+    searchBody.query.bool.filter.push({ range: { AverageRating: { gte: minRating } } });
+  }
+
+  try {
+    const response = await client.search({
+      index: INDEX_NAME,
+      body: searchBody
+    });
+
+    // Support both response formats
+    const hitsContainer = response.body?.hits || response.hits;
+    if (!hitsContainer || !Array.isArray(hitsContainer.hits)) {
+      console.error('Search error: Unexpected response format', response);
+      return [];
+    }
+
+    const results = hitsContainer.hits.map(hit => hit._source);
+
+    return results;
+  } catch (err) {
+    console.error('Search error:', err.meta?.body?.error || err.message);
+    return [];
+  }
+}
 
 module.exports = { searchProduct };
