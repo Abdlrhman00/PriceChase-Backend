@@ -114,7 +114,9 @@ const checkESConnection = async () => {
   try {
     //await indexAllProducts();
 
-    const health = await elasticClient.cluster.health();
+  //  const health = await elasticClient.cluster.health();
+    const versionInfo = await elasticClient.info();
+console.log(versionInfo);
     console.log("✅ Elasticsearch is healthy:", health);
   } catch (error) {
     console.error("❌ Elasticsearch connection error:", error.message || error);

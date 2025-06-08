@@ -6,6 +6,10 @@ const {
   getProductFilters,
 } = require("../utils/productService");
 const { searchProduct } = require("../utils/searchProduct");
+const axios = require("axios");
+const FormData = require("form-data");
+const fs = require("fs");
+const path = require("path");
 
 // Get Popular Products
 exports.getPopularProducts = async (req, res) => {
@@ -111,6 +115,7 @@ exports.searchProducts = async (req, res, next) => {
   if (!query) {
     return next(sendError(400, "searchQuery"));
   }
+/*
 
   const results = await searchProduct(
     query,
@@ -125,11 +130,60 @@ exports.searchProducts = async (req, res, next) => {
     return next(sendError(404, "matchingProducts"));
   }
 
+
+*/
+  const products = await Product.find({Title:{ $regex: query,$options:"i"}})
+
+  
   return res.status(200).json({
     message: "Products retrieved successfully",
-    results: results.length,
-    products: results,
+    results: products.length,
+    products,
   });
+};
+
+
+exports.searchByImage = async (req, res, next) => {
+
+  const imageFile = req.file;
+
+    if (!imageFile) {
+      return next(sendError(400, "No image file provided"));
+    }
+
+        const formData = new FormData();
+    formData.append('image', req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype,
+    });
+
+ 
+    // Call Flask ML server
+    const flaskResponse = await axios.post("http://127.0.0.1:5050/predict", formData, {
+      headers: formData.getHeaders(),
+    });
+
+
+    const label = flaskResponse.data.label;
+
+    if (!label) {
+      return next(sendError(400, "Could not get prediction from image"));
+    }
+
+    // Search your product DB by label
+    const products = await Product.find({Title:{ $regex: label,$options:"i"}})
+
+    if (!products || products.length === 0) {
+      return next(sendError(404, "matchingProducts"));
+    }
+
+  return res.status(200).json({
+    message: "Products retrieved successfully",
+    results: products.length,
+    products,
+  });
+
+
 };
 
 exports.getProductById = async (req, res, next) => {

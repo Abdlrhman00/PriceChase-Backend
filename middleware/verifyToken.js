@@ -18,9 +18,7 @@ const verifyToken = async (req, res, next) => {
       return next(sendError(401));
     }
     try {
-      console.log("1rrr")
       const decodedRefreshToken = verifyJWT(refresh_token);
-      console.log("2rrr")
 
       const user = await User.findById(decodedRefreshToken.id);
 
