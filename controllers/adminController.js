@@ -6,6 +6,7 @@ const Product = require('../models/product');
 // const Subcategory = require('../models/subCategory');
 const User = require('../models/user');
 const Store = require('../models/store');
+const { indexProduct,updateProduct,deleteProduct } = require("../utils/elasticsearchHelpers");
 
 // Create a new product
 // exports.createProduct = async (req, res) => {

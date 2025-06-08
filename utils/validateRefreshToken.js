@@ -13,7 +13,7 @@ module.exports = asyncHandler(async (cookieToken, user) => {
     await user.save(); // Save only if there are changes
   }
 
-  for (const refreshToken of validTokens) {
+  for (const refreshToken of validTokens) { 
     const isValid = await bcrypt.compare(cookieToken, refreshToken.token);
 
     if (isValid) {
