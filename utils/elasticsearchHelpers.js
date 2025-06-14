@@ -8,7 +8,8 @@ module.exports = {
       await client.index({
         index: INDEX_NAME,
         id: product.id || product._id.toString(),
-        document: {
+        body: {
+          id: product._id.toString(), 
           Sku:          product.Sku || '', // Default to empty string if not provided
           Title:        product.Title,
           StoreName:    product.StoreName,
@@ -45,6 +46,8 @@ module.exports = {
         id: productId.toString(),
         doc: updatedData
       });
+
+      
       console.log(`[ES] Updated product ${productId}`);
     } catch (err) {
       console.error('[ES] Error updating product:', err);

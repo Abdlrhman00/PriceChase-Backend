@@ -1,12 +1,20 @@
 // utils/elasticsearchHelpers.js
-const { Client } = require('@elastic/elasticsearch');
+const { Client } = require("elasticsearch");
 const fs = require('fs');
 const Category = require('../models/category');  // Import Category model
 const SubCategory = require('../models/subCategory');  // Import SubCategory model
 
 const client = new Client({
-  node: process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
+  host: process.env.BONSAI_URI,
+  auth: {
+    username:  process.env.BONSAI_USERNAME,
+    password:  process.env.BONSAI_PASSWORD,
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
 });
+
 
 const INDEX_NAME = 'products';
 
@@ -103,7 +111,10 @@ if (subCategoryName) {
       return [];
     }
 
-    const results = hitsContainer.hits.map(hit => hit._source);
+      const results = hitsContainer.hits.map(hit => ({
+          _id: hit.id, // attach Elasticsearch ID
+    ...hit._source
+  }));
 
     return results;
   } catch (err) {
