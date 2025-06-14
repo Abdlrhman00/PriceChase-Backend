@@ -10,7 +10,7 @@ const path = require("path");
 const cookieParser = require('cookie-parser');
 const AppError = require("./utils/AppError");
 const globalError = require("./middleware/errorMiddleware");
-const elasticClient = require('./utils/elasticsearchClient');
+const client = require('./utils/elasticsearchClient');
 const indexAllProducts =  require("./utils/indexAllProducts")
 
 const fs = require("fs");
@@ -112,11 +112,10 @@ app.listen(PORT, () => {
 
 const checkESConnection = async () => {
   try {
-    //await indexAllProducts();
+   //await indexAllProducts();
 
-  //  const health = await elasticClient.cluster.health();
-    const versionInfo = await elasticClient.info();
-console.log(versionInfo);
+    const health = await client.cluster.health();
+    const versionInfo = await client.info();
     console.log("✅ Elasticsearch is healthy:", health);
   } catch (error) {
     console.error("❌ Elasticsearch connection error:", error.message || error);

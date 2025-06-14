@@ -115,9 +115,9 @@ exports.searchProducts = async (req, res, next) => {
   if (!query) {
     return next(sendError(400, "searchQuery"));
   }
-/*
 
-  const results = await searchProduct(
+
+  const products = await searchProduct(
     query,
     categoryName || null,
     subCategoryName || null,
@@ -126,13 +126,13 @@ exports.searchProducts = async (req, res, next) => {
     minRating ? Number(minRating) : null
   );
 
-  if (!results || results.length === 0) {
+  if (!products || products.length === 0) {
     return next(sendError(404, "matchingProducts"));
   }
 
 
-*/
-  const products = await Product.find({Title:{ $regex: query,$options:"i"}})
+
+ // const products = await Product.find({Title:{ $regex: query,$options:"i"}})
 
   
   return res.status(200).json({
@@ -170,12 +170,14 @@ exports.searchByImage = async (req, res, next) => {
       return next(sendError(400, "Could not get prediction from image"));
     }
 
-    // Search your product DB by label
-    const products = await Product.find({Title:{ $regex: label,$options:"i"}})
 
-    if (!products || products.length === 0) {
-      return next(sendError(404, "matchingProducts"));
-    }
+  const products = await searchProduct(
+    label
+  );
+
+  if (!products || products.length === 0) {
+    return next(sendError(404, "matchingProducts"));
+  }
 
   return res.status(200).json({
     message: "Products retrieved successfully",

@@ -27,28 +27,26 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if request.method == 'POST':
-
+    try:
         file = request.files['image']
-        img = Image.open(file.stream).convert('RGB')  # Force 3 channels
         img = Image.open(file.stream)
-        img = img.resize((224, 224))  
+        img = img.resize((224, 224))
         img = np.array(img) / 255.0
         img = img.reshape(1, 224, 224, 3)
 
         prediction = model.predict(img)
-        predicted_class = np.argmax(prediction)
-
-        # Convert to Python native type
-        predicted_class = int(predicted_class)
+        predicted_class = int(np.argmax(prediction))
 
         result = {
             'prediction': predicted_class,
             'label': class_names.get(predicted_class, 'Unknown')
         }
         print(result)
-
         return jsonify(result)
+
+    except Exception as e:
+        print(f"Error during prediction: {e}")
+        return jsonify({'error': 'Prediction failed', 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5050)
