@@ -5,7 +5,7 @@ const setCookie = (res,tokenType,token,maxAge) =>{
         httpOnly: true,
         secure: true,
         maxAge, 
-        sameSite: "Strict",
+        sameSite: "None",
       });
 
 }
