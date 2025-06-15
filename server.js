@@ -29,13 +29,15 @@ const mongoURI = process.env.MONGODB_URI;
 const allowedOrigins = [
   "http://localhost:5000",
   "http://localhost:5173", // Local development
-  "https://isharee-backend-production.up.railway.app", // Deployed frontend
+  "https://isharee-backend-production.up.railway.app", // Deployed frontend,
+  "http://pricechase.francecentral.cloudapp.azure.com/"
 ];
 
 app.use(
   cors({
-    origin: "*", // Allow all origins
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+    origin: allowedOrigins, // Allow all origins
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+          credentials: true, 
   })
 );
 
