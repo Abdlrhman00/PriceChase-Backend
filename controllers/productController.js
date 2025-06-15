@@ -116,6 +116,63 @@ exports.getProductById = async (req, res, next) => {
   });
 };
 
+exports.searchFilters = async (req, res) => {
+    try {
+        let { product_ids } = req.query;
+
+        // Convert single or multiple query values to an array
+        if (!product_ids) {
+            return res.status(400).json({ message: "No product IDs provided" });
+        }
+
+        if (typeof product_ids === 'string') {
+            product_ids = product_ids.split(','); // Handle comma-separated string
+        }
+
+        if (!Array.isArray(product_ids) || product_ids.length === 0) {
+            return res.status(400).json({ message: "Invalid product_ids format" });
+        }
+
+        // Convert to ObjectId if needed
+        const mongoose = require('mongoose');
+        const productObjectIds = product_ids.map(id => mongoose.Types.ObjectId(id));
+
+        // Apply filters, sort, pagination
+        const { filter, sortCriteria, limitNum } = getProductFilters(req.query);
+
+        // Filter only the specified products
+        filter._id = { $in: productObjectIds };
+
+        // Fetch filtered, sorted products
+        const products = await Product.find(filter)
+            .sort(sortCriteria)
+            .limit(limitNum + 1); // Fetch one extra item to determine if next page exists
+
+        let nextCursor = null;
+        if (products.length > limitNum) {
+            nextCursor = products[limitNum]._id;
+            products.pop();
+        }
+
+        if (!products.length) {
+            return res.status(404).json({ message: "No products found with these filters" });
+        }
+
+        res.status(200).json({
+            message: "Filtered products fetched successfully",
+            nextCursor,
+            totalProducts: products.length,
+            products,
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error filtering products", error });
+    }
+};
+
+
+
 // exports.createProduct = async (req, res) => {
 //     try {
 //       const { 
