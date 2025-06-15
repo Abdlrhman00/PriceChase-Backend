@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "devs": "nodemon server.js",
     "start": "node server.js",
     "start-ml": "python ml-server/ML_model.py",
     "dev": "concurrently \"nodemon server.js\" \"npm run start-ml\"",
@@ -20,7 +21,6 @@
     "axios": "^1.9.0",
     "@tensorflow/tfjs": "^4.22.0",
     "@tensorflow/tfjs-node": "^4.22.0",
-    "axios": "^1.8.4",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.5.1",

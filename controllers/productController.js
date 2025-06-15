@@ -219,6 +219,7 @@ exports.searchFilters = async (req, res) => {
         if (typeof product_ids === 'string') {
             product_ids = product_ids.split(','); // Handle comma-separated string
         }
+        console.log(product_ids)
 
         if (!Array.isArray(product_ids) || product_ids.length === 0) {
             return res.status(400).json({ message: "Invalid product_ids format" });
@@ -226,7 +227,7 @@ exports.searchFilters = async (req, res) => {
 
         // Convert to ObjectId if needed
         const mongoose = require('mongoose');
-        const productObjectIds = product_ids.map(id => mongoose.Types.ObjectId(id));
+        const productObjectIds = product_ids.map(id => new mongoose.Types.ObjectId(id));
 
         // Apply filters, sort, pagination
         const { filter, sortCriteria, limitNum } = getProductFilters(req.query);
