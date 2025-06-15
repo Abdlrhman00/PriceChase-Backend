@@ -66,12 +66,11 @@ const userSchema = new mongoose.Schema({
         255,
         "Profile picture URL should be less than 256 characters.",
       ],
-      default:
-        "https://res.cloudinary.com/dknokwido/image/upload/v1737968225/profilePicture/tdnvzliie0wty93ihodf.jpg",
+      default:"https://res.cloudinary.com/dknokwido/image/upload/v1749507053/User_Circle_q2ohxv.png",
     },
     public_id: {
       type: String,
-      default: "profilePicture/tdnvzliie0wty93ihodf",
+      default: "User_Circle_q2ohxv",
     },
   },
   role: {
